@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Grafcet PLC Example</title>
+  <script src="https://unpkg.com/gojs/release/go.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+    }
+
+    #myDiagramDiv {
+      width: 100%;
+      height: 90%;
+      background: #f5f7fa;
+    }
+
+    #downloadBtn {
+      width: 200px;
+      height: 40px;
+      margin: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="myDiagramDiv"></div>
+  <button id="downloadBtn">Download PDF</button>
+
+  <script>
+    const $ = go.GraphObject.make;
+
+    // --- Criando diagrama ---
+    const diagram = $(go.Diagram, "myDiagramDiv", {
+      "undoManager.isEnabled": true,
+      layout: $(go.LayeredDigraphLayout, { direction: 90, layerSpacing: 50 })
+    });
+
+    // --- Templates ---
+    diagram.nodeTemplateMap.add("Start",
+      $(go.Node, "Auto",
+        { width: 80, height: 40 },
+        $(go.Shape, "Rectangle", { fill: "#BBDEFB", stroke: "#0D47A1", strokeWidth: 2 }),
+        $(go.TextBlock, { margin: 6, font: "bold 12px sans-serif" }, new go.Binding("text", "text"))
+      )
+    );
+
+    diagram.nodeTemplateMap.add("NextStep",
+      $(go.Node, "Auto",
+        { width: 80, height: 40 },
+        $(go.Shape, "Rectangle", { fill: "#C8E6C9", stroke: "#2E7D32", strokeWidth: 2 }),
+        $(go.TextBlock, { margin: 6, font: "bold 12px sans-serif" }, new go.Binding("text", "text"))
+      )
+    );
+
+    diagram.nodeTemplateMap.add("Action",
+      $(go.Node, "Auto",
+        { width: 100, height: 40 },
+        $(go.Shape, "Rectangle", { fill: "#FFF3E0", stroke: "#E65100", strokeWidth: 2 }),
+        $(go.TextBlock, { margin: 6, font: "11px monospace", wrap: go.TextBlock.WrapFit }, new go.Binding("text", "text"))
+      )
+    );
+
+    diagram.nodeTemplateMap.add("Exclusive",
+      $(go.Node, "Auto",
+        { width: 60, height: 8 },
+        $(go.Shape, "Rectangle", { fill: "#FFCDD2", stroke: null })
+      )
+    );
+
+    diagram.linkTemplate = $(go.Link,
+      {
+        routing: go.Link.Orthogonal,
+        corner: 5,
+        fromSpot: new go.Spot(0.25, 1, true),
+        toSpot: new go.Spot(0.25, 0, true)
+
+      },
+      $(go.Shape),
+      $(go.Shape, { toArrow: "Standard" }),
+      $(go.TextBlock, { segmentOffset: new go.Point(0, -10), font: "10px sans-serif" }, new go.Binding("text", "text"))
+    );
+
+
+    // --- Modelo Grafcet ---
+    diagram.model = new go.GraphLinksModel({
+      nodeDataArray: [
+        { "key": 1, "category": "Start", "location": "250 300", "text": "E1" },
+        { "key": 2, "category": "Start", "location": "350 300", "text": "E2" },
+
+        { "key": 3, "category": "Exclusive", "location": "300 370", "text": "T1 / T2" },
+
+        { "key": 4, "category": "NextStep", "location": "250 440", "text": "E3" },
+        { "key": 5, "category": "NextStep", "location": "350 440", "text": "E4" },
+
+        { "key": 6, "category": "Action", "location": "250 510", "text": "Q1.0 = ON" },
+        { "key": 7, "category": "Action", "location": "350 510", "text": "Q2.0 = ON" }
+      ],
+      linkDataArray: [
+        { "from": 1, "to": 3, "text": "" },
+        { "from": 2, "to": 3, "text": "" },
+
+        { "from": 3, "to": 4, "text": "T1: condição A" },
+        { "from": 3, "to": 5, "text": "T2: condição B" },
+
+        { "from": 4, "to": 6, "text": "" },
+        { "from": 5, "to": 7, "text": "" }
+      ]
+    });
+
+    // --- Botão Download PDF ---
+    document.addEventListener("DOMContentLoaded", function () {
+      const downloadBtn = document.getElementById("downloadBtn");
+      downloadBtn.addEventListener("click", () => {
+        const scale = 4; // alta resolução
+        const imgData = diagram.makeImageData({ scale: scale });
+
+        const { jsPDF } = window.jspdf;
+
+        // largura e altura do diagrama em pixels
+        const diagramWidth = diagram.div.clientWidth * scale;
+        const diagramHeight = diagram.div.clientHeight * scale;
+
+        // determina a orientação automaticamente
+        //const orientation = diagramWidth > diagramHeight ? 'landscape' : 'portrait';
+        const orientation = 'portrait';
+        // cria PDF com tamanho exato do diagrama
+        const pdf = new jsPDF({
+          orientation: orientation,
+          unit: 'pt',
+          format: [diagramWidth, diagramHeight]
+        });
+
+        pdf.addImage(imgData, 'PNG', 0, 0, diagramWidth, diagramHeight);
+        pdf.save("grafcet.pdf");
+      });
+    });
+
+  </script>
+</body>
+
+</html>
