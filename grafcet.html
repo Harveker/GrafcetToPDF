@@ -1,149 +1,642 @@
 <!DOCTYPE html>
-<html>
-
-<head>
-  <meta charset="UTF-8">
-  <title>Grafcet PLC Example</title>
-  <script src="https://unpkg.com/gojs/release/go.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    html,
-    body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      font-family: sans-serif;
-    }
-
-    #myDiagramDiv {
-      width: 100%;
-      height: 90%;
-      background: #f5f7fa;
-    }
-
-    #downloadBtn {
-      width: 200px;
-      height: 40px;
-      margin: 10px;
-      font-size: 16px;
-    }
-  </style>
-</head>
+<html lang="en">
 
 <body>
-  <div id="myDiagramDiv"></div>
-  <button id="downloadBtn">Download PDF</button>
-
-  <script>
-    const $ = go.GraphObject.make;
-
-    // --- Criando diagrama ---
-    const diagram = $(go.Diagram, "myDiagramDiv", {
-      "undoManager.isEnabled": true,
-      layout: $(go.LayeredDigraphLayout, { direction: 90, layerSpacing: 50 })
-    });
-
-    // --- Templates ---
-    diagram.nodeTemplateMap.add("Start",
-      $(go.Node, "Auto",
-        { width: 80, height: 40 },
-        $(go.Shape, "Rectangle", { fill: "#BBDEFB", stroke: "#0D47A1", strokeWidth: 2 }),
-        $(go.TextBlock, { margin: 6, font: "bold 12px sans-serif" }, new go.Binding("text", "text"))
-      )
-    );
-
-    diagram.nodeTemplateMap.add("NextStep",
-      $(go.Node, "Auto",
-        { width: 80, height: 40 },
-        $(go.Shape, "Rectangle", { fill: "#C8E6C9", stroke: "#2E7D32", strokeWidth: 2 }),
-        $(go.TextBlock, { margin: 6, font: "bold 12px sans-serif" }, new go.Binding("text", "text"))
-      )
-    );
-
-    diagram.nodeTemplateMap.add("Action",
-      $(go.Node, "Auto",
-        { width: 100, height: 40 },
-        $(go.Shape, "Rectangle", { fill: "#FFF3E0", stroke: "#E65100", strokeWidth: 2 }),
-        $(go.TextBlock, { margin: 6, font: "11px monospace", wrap: go.TextBlock.WrapFit }, new go.Binding("text", "text"))
-      )
-    );
-
-    diagram.nodeTemplateMap.add("Exclusive",
-      $(go.Node, "Auto",
-        { width: 60, height: 8 },
-        $(go.Shape, "Rectangle", { fill: "#FFCDD2", stroke: null })
-      )
-    );
-
-    diagram.linkTemplate = $(go.Link,
-      {
-        routing: go.Link.Orthogonal,
-        corner: 5,
-        fromSpot: new go.Spot(0.25, 1, true),
-        toSpot: new go.Spot(0.25, 0, true)
-
-      },
-      $(go.Shape),
-      $(go.Shape, { toArrow: "Standard" }),
-      $(go.TextBlock, { segmentOffset: new go.Point(0, -10), font: "10px sans-serif" }, new go.Binding("text", "text"))
-    );
+  <script src="https://cdn.jsdelivr.net/npm/gojs@3.1.0/release/go-debug.js"></script>
+  <p>
+    This is a minimalist HTML and JavaScript skeleton of the GoJS Sample
+    <a href="https://gojs.net/latest/samples/grafcet.html">grafcet.html</a>. It was automatically generated from a
+    button on the sample page,
+    and does not contain the full HTML. It is intended as a starting point to adapt for your own usage.
+    For many samples, you may need to inspect the
+    <a href="https://github.com/NorthwoodsSoftware/GoJS/blob/master/samples/grafcet.html">full source on Github</a>
+    and copy other files or scripts.
+  </p>
+  <div id="allSampleContent" class="p-4 w-full">
 
 
-    // --- Modelo Grafcet ---
-    diagram.model = new go.GraphLinksModel({
-      nodeDataArray: [
-        { "key": 1, "category": "Start", "location": "250 300", "text": "E1" },
-        { "key": 2, "category": "Start", "location": "350 300", "text": "E2" },
 
-        { "key": 3, "category": "Exclusive", "location": "300 370", "text": "T1 / T2" },
 
-        { "key": 4, "category": "NextStep", "location": "250 440", "text": "E3" },
-        { "key": 5, "category": "NextStep", "location": "350 440", "text": "E4" },
+    <script id="code">
 
-        { "key": 6, "category": "Action", "location": "250 510", "text": "Q1.0 = ON" },
-        { "key": 7, "category": "Action", "location": "350 510", "text": "Q2.0 = ON" }
-      ],
-      linkDataArray: [
-        { "from": 1, "to": 3, "text": "" },
-        { "from": 2, "to": 3, "text": "" },
+      // This custom LinkingTool just turns on Diagram.allowLink when it starts,
+      // and turns it off again when it stops so that users cannot draw new links modelessly.
+      class CustomLinkingTool extends go.LinkingTool {
+        constructor(init) {
+          super();
+          if (init) Object.assign(this, init);
+        }
 
-        { "from": 3, "to": 4, "text": "T1: condição A" },
-        { "from": 3, "to": 5, "text": "T2: condição B" },
+        // user-drawn linking is normally disabled,
+        // but needs to be turned on when using this tool
+        doStart() {
+          this.diagram.allowLink = true;
+          super.doStart();
+        }
 
-        { "from": 4, "to": 6, "text": "" },
-        { "from": 5, "to": 7, "text": "" }
-      ]
-    });
+        doStop() {
+          super.doStop();
+          this.diagram.allowLink = false;
+        }
+      }
+      // end CustomLinkingTool
 
-    // --- Botão Download PDF ---
-    document.addEventListener("DOMContentLoaded", function () {
-      const downloadBtn = document.getElementById("downloadBtn");
-      downloadBtn.addEventListener("click", () => {
-        const scale = 4; // alta resolução
-        const imgData = diagram.makeImageData({ scale: scale });
+      // This custom Link class is smart about computing the link point and direction
+      // at "Parallel" and "Exclusive" nodes.
+      class BarLink extends go.Link {
+        constructor(init) {
+          super();
+          if (init) Object.assign(this, init);
+        }
+
+        getLinkPoint(node, port, spot, from, ortho, othernode, otherport) {
+          const r = port.getDocumentBounds();
+          const op = otherport.getDocumentBounds();
+          const below = op.centerY > r.centerY;
+          const y = below ? r.bottom : r.top;
+          if (node.category === 'Parallel' || node.category === 'Exclusive') {
+            if (op.right < r.left) return new go.Point(r.left, y);
+            if (op.left > r.right) return new go.Point(r.right, y);
+            return new go.Point((Math.max(r.left, op.left) + Math.min(r.right, op.right)) / 2, y);
+          } else {
+            return new go.Point(r.centerX, y);
+          }
+        }
+
+        getLinkDirection(node, port, linkpoint, spot, from, ortho, othernode, otherport) {
+          const p = port.getDocumentPoint(go.Spot.Center);
+          const op = otherport.getDocumentPoint(go.Spot.Center);
+          const below = op.y > p.y;
+          return below ? 90 : 270;
+        }
+      }
+      // end BarLink class
+
+      function init() {
+
+        myDiagram = new go.Diagram('myDiagramDiv', {
+          allowLink: false, // linking is only started via buttons, not modelessly;
+          // see the "startLink..." functions and CustomLinkingTool defined above
+          // double-click in the background creates a new "Start" node
+          'clickCreatingTool.archetypeNodeData': { category: 'Start', step: 1, text: 'Action' },
+          linkingTool: new CustomLinkingTool(), // defined above to automatically turn on allowLink
+          'undoManager.isEnabled': true
+        });
+
+        // when the document is modified, add a "*" to the title and enable the "Save" button
+        myDiagram.addDiagramListener('Modified', e => {
+          const button = document.getElementById('saveModel');
+          if (button) button.disabled = !myDiagram.isModified;
+          const idx = document.title.indexOf('*');
+          if (myDiagram.isModified) {
+            if (idx < 0) document.title += '*';
+          } else {
+            if (idx >= 0) document.title = document.title.slice(0, idx);
+          }
+        });
+
+        // This implements a selection Adornment that is a horizontal bar of command buttons
+        // that appear when the user selects a node.
+        // Each button has a click function to execute the command, a tooltip for a textual description,
+        // and a Binding of "visible" to hide the button if it cannot be executed for that particular node.
+
+        const commandsAdornment =
+          go.GraphObject.build('ContextMenu')
+            .add(
+              new go.Panel('Auto')
+                .add(
+                  new go.Shape({
+                    fill: null,
+                    stroke: 'deepskyblue',
+                    strokeWidth: 2,
+                    shadowVisible: false
+                  }),
+                  new go.Placeholder()
+                ),
+              new go.Panel('Horizontal', { defaultStretch: go.Stretch.Vertical })
+                .add(
+                  go.GraphObject.build('Button', {
+                    click: addExclusive,
+                    toolTip: makeTooltip('Add Exclusive')
+                  })
+                    .bindObject('visible', '', canAddSplit)
+                    .add(
+                      new go.Shape({
+                        geometryString: 'M0 0 L10 0',
+                        fill: null,
+                        stroke: 'red',
+                        margin: 3
+                      })
+                    ),
+                  go.GraphObject.build('Button', {
+                    click: addParallel,
+                    toolTip: makeTooltip('Add Parallel')
+                  })
+                    .bindObject('visible', '', canAddSplit)
+                    .add(
+                      new go.Shape({
+                        geometryString: 'M0 0 L10 0 M0 3 10 3',
+                        fill: null,
+                        stroke: 'red',
+                        margin: 3
+                      })
+                    ),
+                  go.GraphObject.build('Button', {
+                    click: addStep,
+                    toolTip: makeTooltip('Add Step')
+                  })
+                    .bindObject('visible', '', canAddStep)
+                    .add(
+                      new go.Shape({
+                        geometryString: 'M0 0 L10 0 10 6 0 6z',
+                        fill: 'lightyellow',
+                        margin: 3
+                      })
+                    ),
+                  go.GraphObject.build('Button', {
+                    click: startLinkDown,
+                    toolTip: makeTooltip('Draw Link Down')
+                  })
+                    .bindObject('visible', '', canStartLink)
+                    .add(
+                      new go.Shape({
+                        geometryString: 'M0 0 M5 0 L5 10 M3 8 5 10 7 8 M10 0',
+                        fill: null,
+                        margin: 3
+                      })
+                    ),
+                  go.GraphObject.build('Button', {
+                    click: startLinkAround,
+                    toolTip: makeTooltip('Draw Link Skip')
+                  })
+                    .bindObject('visible', '', canStartLink)
+                    .add(
+                      new go.Shape({
+                        geometryString: 'M0 0 M3 0 L3 2 7 2 7 6 3 6 3 10 M1 8 3 10 5 8 M10 0',
+                        fill: null,
+                        margin: 3
+                      })
+                    ),
+                  go.GraphObject.build('Button', {
+                    click: startLinkUp,
+                    toolTip: makeTooltip('Draw Link Repeat')
+                  })
+                    .bindObject('visible', '', canStartLink)
+                    .add(
+                      new go.Shape({
+                        geometryString: 'M0 0 M3 2 L3 0 7 0 7 10 3 10 3 8 M5 6 7 4 9 6 M10 0',
+                        fill: null,
+                        margin: 3
+                      })
+                    )
+                )
+            );
+
+        function makeTooltip(str) {
+          // a helper function for defining tooltips for buttons
+          return go.GraphObject.build('ToolTip')
+            .add(new go.TextBlock(str));
+        }
+
+        // Commands for adding new Nodes
+
+        function addStep(e, obj) {
+          const node = obj.part.adornedPart;
+          const model = myDiagram.model;
+          model.startTransaction('add Step');
+          const loc = node.location.copy();
+          loc.y += 50;
+          const nodedata = { location: go.Point.stringify(loc) };
+          model.addNodeData(nodedata);
+          const nodekey = model.getKeyForNodeData(nodedata);
+          const linkdata = { from: model.getKeyForNodeData(node.data), to: nodekey, text: 'c' };
+          model.addLinkData(linkdata);
+          const newnode = myDiagram.findNodeForData(nodedata);
+          myDiagram.select(newnode);
+          model.commitTransaction('add Step');
+        }
+
+        function canAddStep(adorn) {
+          const node = adorn.adornedPart;
+          if (node.category === '' || node.category === 'Start') {
+            return node.findLinksOutOf().count === 0;
+          } else if (node.category === 'Parallel' || node.category === 'Exclusive') {
+            return true;
+          }
+          return false;
+        }
+
+        function addParallel(e, obj) {
+          addSplit(obj.part.adornedPart, 'Parallel');
+        }
+        function addExclusive(e, obj) {
+          addSplit(obj.part.adornedPart, 'Exclusive');
+        }
+
+        function addSplit(node, type) {
+          const model = myDiagram.model;
+          model.startTransaction('add ' + type);
+          const loc = node.location.copy();
+          loc.y += 50;
+          const nodedata = { category: type, location: go.Point.stringify(loc) };
+          model.addNodeData(nodedata);
+          const nodekey = model.getKeyForNodeData(nodedata);
+          const linkdata = { from: model.getKeyForNodeData(node.data), to: nodekey };
+          model.addLinkData(linkdata);
+          const newnode = myDiagram.findNodeForData(nodedata);
+          myDiagram.select(newnode);
+          model.commitTransaction('add ' + type);
+        }
+
+        function canAddSplit(adorn) {
+          const node = adorn.adornedPart;
+          if (node.category === '' || node.category === 'Start') {
+            return node.findLinksOutOf().count === 0;
+          } else if (node.category === 'Parallel' || node.category === 'Exclusive') {
+            return false;
+          }
+          return false;
+        }
+
+        // Commands for starting drawing new Links
+
+        function startLinkDown(e, obj) {
+          startLink(obj.part.adornedPart, '', 'c');
+        }
+        function startLinkAround(e, obj) {
+          startLink(obj.part.adornedPart, 'Skip', 's');
+        }
+        function startLinkUp(e, obj) {
+          startLink(obj.part.adornedPart, 'Repeat', 'r');
+        }
+
+        function startLink(node, category, condition) {
+          const tool = myDiagram.toolManager.linkingTool;
+          // to control what kind of Link is created,
+          // change the LinkingTool.archetypeLinkData's category
+          myDiagram.model.setCategoryForLinkData(tool.archetypeLinkData, category);
+          // also change the text indicating the condition, which the user can edit
+          tool.archetypeLinkData.text = condition;
+          tool.startObject = node.port;
+          myDiagram.currentTool = tool;
+          tool.doActivate();
+        }
+
+        function canStartLink(adorn) {
+          const node = adorn.adornedPart;
+          return true; // this could be smarter
+        }
+
+        // The various kinds of Nodes
+
+        function nodeStyle(node) {
+          node.locationSpot = go.Spot.Center;
+          node.selectionAdornmentTemplate = commandsAdornment; // shared selection Adornment
+          node.bindTwoWay('location', 'location', go.Point.parse, go.Point.stringify);
+        }
+
+        myDiagram.nodeTemplateMap.add('Start',
+          new go.Node('Horizontal', { locationObjectName: 'STEPPANEL', selectionObjectName: 'STEPPANEL' })
+            .apply(nodeStyle)
+            .add(
+              new go.Panel('Auto', {
+                // this is the port element, not the whole Node
+                name: 'STEPPANEL',
+                portId: '',
+                fromSpot: go.Spot.Bottom,
+                fromLinkable: true
+              })
+                .add(
+                  new go.Shape({ fill: 'lightgreen' }),
+                  new go.Panel('Auto', { margin: 3 })
+                    .add(
+                      new go.Shape({
+                        fill: null,
+                        minSize: new go.Size(20, 20)
+                      }),
+                      new go.TextBlock('Start', {
+                        margin: 3,
+                        editable: true
+                      })
+                        .bindTwoWay('text', 'step')
+                    )
+                ),
+              // a connector line between the texts
+              new go.Shape('LineH', { width: 10, height: 1 }),
+              // the boxed, editable text on the side
+              new go.Panel('Auto')
+                .add(
+                  new go.Shape({ fill: 'white' }),
+                  new go.TextBlock('Action', {
+                    margin: 3,
+                    editable: true
+                  })
+                    .bindTwoWay('text')
+                )
+            ));
+
+        myDiagram.nodeTemplateMap.add('',
+          new go.Node('Horizontal', { locationObjectName: 'STEPPANEL', selectionObjectName: 'STEPPANEL' })
+            .apply(nodeStyle)
+            .add(
+              new go.Panel('Auto', {
+                // this is the port element, not the whole Node
+                name: 'STEPPANEL',
+                portId: '',
+                fromSpot: go.Spot.Bottom,
+                fromLinkable: true,
+                toSpot: go.Spot.Top,
+                toLinkable: true
+              })
+                .add(
+                  new go.Shape({
+                    fill: 'lightyellow',
+                    minSize: new go.Size(20, 20)
+                  }),
+                  new go.TextBlock('Step', {
+                    margin: 3,
+                    editable: true
+                  })
+                    .bindTwoWay('text', 'step')
+                ),
+              new go.Shape('LineH', {
+                width: 10,
+                height: 1
+              }),
+              new go.Panel('Auto')
+                .add(
+                  new go.Shape({ fill: 'white' }),
+                  new go.TextBlock('Action', {
+                    margin: 3,
+                    editable: true
+                  })
+                    .bindTwoWay('text')
+                )
+            ));
+
+        const resizeAdornment =
+          new go.Adornment("Spot")
+            .add(
+              new go.Placeholder(),
+              new go.Shape({ // left resize handle
+                alignment: go.Spot.Left,
+                cursor: 'col-resize',
+                desiredSize: new go.Size(6, 6),
+                fill: 'lightblue',
+                stroke: 'dodgerblue'
+              }),
+              new go.Shape({ // right resize handle
+                alignment: go.Spot.Right,
+                cursor: 'col-resize',
+                desiredSize: new go.Size(6, 6),
+                fill: 'lightblue',
+                stroke: 'dodgerblue'
+              })
+            );
+
+        myDiagram.nodeTemplateMap.add('Parallel',
+          new go.Node({
+            // special resizing: just at the ends
+            resizable: true,
+            resizeObjectName: 'SHAPE',
+            resizeAdornmentTemplate: resizeAdornment,
+            fromLinkable: true,
+            toLinkable: true
+          })
+            .apply(nodeStyle)
+            .add(
+              new go.Shape({
+                // horizontal pair of lines stretched to an initial width of 200
+                name: 'SHAPE',
+                geometryString: 'M0 0 L100 0 M0 4 L100 4',
+                fill: 'transparent',
+                stroke: 'red',
+                width: 200
+              })
+                .bindTwoWay('desiredSize', 'size', go.Size.parse, go.Size.stringify)
+            ));
+
+        myDiagram.nodeTemplateMap.add('Exclusive',
+          new go.Node({
+            // special resizing: just at the ends
+            resizable: true,
+            resizeObjectName: 'SHAPE',
+            resizeAdornmentTemplate: resizeAdornment,
+            fromLinkable: true,
+            toLinkable: true
+          })
+            .apply(nodeStyle)
+            .add(
+              new go.Shape({
+                // horizontal line stretched to an initial width of 200
+                name: 'SHAPE',
+                geometryString: 'M0 0 L100 0',
+                fill: 'transparent',
+                stroke: 'red',
+                width: 200
+              })
+                .bindTwoWay('desiredSize', 'size', go.Size.parse, go.Size.stringify)
+            ));
+
+        // the various kinds of Links
+
+        myDiagram.linkTemplateMap.add('',
+          new BarLink({ routing: go.Routing.Orthogonal }) // subclass defined above
+            .add(
+              new go.Shape({ strokeWidth: 1.5 }),
+              new go.Shape('LineH', { // only visible when there is text
+                width: 20,
+                height: 1,
+                visible: false
+              })
+                .bind('visible', 'text', t => t !== ''),
+              new go.TextBlock({  // only visible when there is text
+                alignmentFocus: new go.Spot(0, 0.5, -12, 0),
+                editable: true
+              })
+                .bindTwoWay('text')
+                .bind('visible', 'text', t => t !== '')
+            ));
+
+        myDiagram.linkTemplateMap.add('Skip',
+          new go.Link({
+            routing: go.Routing.AvoidsNodes,
+            fromSpot: go.Spot.Bottom,
+            toSpot: go.Spot.Top,
+            fromEndSegmentLength: 4,
+            toEndSegmentLength: 4
+          })
+            .add(
+              new go.Shape({ strokeWidth: 1.5 }),
+              new go.Shape('LineH', { // only visible when there is text
+                width: 20,
+                height: 1,
+                visible: false
+              })
+                .bind('visible', 'text', t => t !== ''),
+              new go.TextBlock({ // only visible when there is text
+                alignmentFocus: new go.Spot(1, 0.5, 12, 0),
+                editable: true
+              })
+                .bindTwoWay('text')
+                .bind('visible', 'text', t => t !== '')
+            ));
+
+        myDiagram.linkTemplateMap.add('Repeat',
+          new go.Link({
+            routing: go.Routing.AvoidsNodes,
+            fromSpot: go.Spot.Bottom,
+            toSpot: go.Spot.Top,
+            fromEndSegmentLength: 4,
+            toEndSegmentLength: 4
+          })
+            .add(
+              new go.Shape({ strokeWidth: 1.5 }),
+              new go.Shape({
+                toArrow: 'OpenTriangle',
+                segmentIndex: 3,
+                segmentFraction: 0.75
+              }),
+              new go.Shape({
+                toArrow: 'OpenTriangle',
+                segmentIndex: 3,
+                segmentFraction: 0.25
+              }),
+              new go.Shape('LineH', { // only visible when there is text
+                width: 20,
+                height: 1,
+                visible: false
+              })
+                .bind('visible', 'text', t => t !== ''),
+              new go.TextBlock({ // only visible when there is text
+                alignmentFocus: new go.Spot(1, 0.5, 12, 0),
+                editable: true
+              })
+                .bindTwoWay('text')
+                .bind('visible', 'text', t => t !== '')
+            ));
+
+        // start off with a simple diagram
+        load();
+      }
+
+      // save a model to and load a model from JSON text, displayed below the Diagram
+      function save() {
+        document.getElementById('mySavedModel').value = myDiagram.model.toJson();
+        myDiagram.isModified = false;
+      }
+      function load() {
+        myDiagram.model = go.Model.fromJson(document.getElementById('mySavedModel').value);
+      }
+
+      window.addEventListener('DOMContentLoaded', init);
+      window.addEventListener('DOMContentLoaded', init);
+
+      // PDF download button
+      document.getElementById('downloadPdfBtn').addEventListener('click', () => {
+        if (!myDiagram) return;
+
+        const scale = 3; // alta resolução
+        const imgData = myDiagram.makeImageData({ scale });
 
         const { jsPDF } = window.jspdf;
 
-        // largura e altura do diagrama em pixels
-        const diagramWidth = diagram.div.clientWidth * scale;
-        const diagramHeight = diagram.div.clientHeight * scale;
+        const diagramWidth = myDiagram.documentBounds.width * scale;
+        const diagramHeight = myDiagram.documentBounds.height * scale;
+        const orientation = diagramWidth > diagramHeight ? 'landscape' : 'portrait';
 
-        // determina a orientação automaticamente
-        //const orientation = diagramWidth > diagramHeight ? 'landscape' : 'portrait';
-        const orientation = 'portrait';
-        // cria PDF com tamanho exato do diagrama
         const pdf = new jsPDF({
-          orientation: orientation,
+          orientation,
           unit: 'pt',
           format: [diagramWidth, diagramHeight]
         });
 
         pdf.addImage(imgData, 'PNG', 0, 0, diagramWidth, diagramHeight);
-        pdf.save("grafcet.pdf");
+        pdf.save('grafcet.pdf');
       });
-    });
 
+    </script>
+    <div id="buttons">
+      <button id="saveModel" onclick="save()">Save</button>
+      <button id="loadModel" onclick="load()">Load</button>
+      <button id="downloadPdfBtn">Download PDF</button>
+      Diagram Model saved in JSON format:
+    </div>
+
+    <div id="sample">
+      <div id="myDiagramDiv" style="border: solid 1px black; width: 800px; height: 600px"></div>
+      <p>A grafcet diagram is similar to a <a href="sequentialFunction.html">sequential function chart</a>.</p>
+      <p>
+        All the <a>TextBlock</a>s in this sample are editable on double click.
+      </p>
+      <p>
+        Select a Node to show a list of Buttons that enable creating new Nodes or drawing new Links. These buttons are
+        defined as an adornment that is used in a
+        common <a>Part.selectionAdornmentTemplate</a>. This diagram uses many custom functions, including an overridden
+        <a>LinkingTool</a> and a special Link class,
+        <b>BarLink</b>.
+      </p>
+      <div id="buttons">
+        <button id="saveModel" onclick="save()">Save</button>
+        <button id="loadModel" onclick="load()">Load</button>
+        Diagram Model saved in JSON format:
+      </div>
+      <textarea id="mySavedModel" style="width: 100%; height: 300px">{ "class": "go.GraphLinksModel",
+  "nodeDataArray": [
+  { "key": 1, "category": "Start", "location": "250 300", "step": "E1", "text": "E1" },
+  { "key": 2, "category": "Start", "location": "350 300", "step": "E2", "text": "E2" },
+
+  { "key": 3, "category": "Exclusive", "location": "300 370", "text": "T1 / T2" },
+
+  { "key": 4, "category": "Start", "location": "250 440", "step": "E3", "text": "E3" },
+  { "key": 5, "category": "Start", "location": "350 440", "step": "E4", "text": "E4" },
+
+  { "key": 6, "category": "Start", "location": "250 510", "step": "Q1.0", "text": "Q1.0 = ON" },
+  { "key": 7, "category": "Start", "location": "350 510", "step": "Q2.0", "text": "Q2.0 = ON" }
+ ],
+  "linkDataArray": [
+  { "from": 1, "to": 3, "text": "c" },
+  { "from": 2, "to": 3, "text": "c" },
+
+  { "from": 3, "to": 4, "text": "T1" },
+  { "from": 3, "to": 5, "text": "T2" },
+
+  { "from": 4, "to": 6, "text": "c" },
+  { "from": 5, "to": 7, "text": "c" }
+ ]}
+  </textarea>
+
+    </div>
+
+
+  </div>
+  <button id="downloadPdfBtn">Download PDF</button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    document.getElementById('downloadPdfBtn').addEventListener('click', () => {
+      if (!myDiagram) return;
+
+      const scale = 3; // aumenta a resolução da imagem
+      const imgData = myDiagram.makeImageData({ scale });
+
+      const { jsPDF } = window.jspdf;
+
+      const diagramWidth = myDiagram.documentBounds.width * scale;
+      const diagramHeight = myDiagram.documentBounds.height * scale;
+      const orientation = diagramWidth > diagramHeight ? 'landscape' : 'portrait';
+
+      const pdf = new jsPDF({
+        orientation,
+        unit: 'pt',
+        format: [diagramWidth, diagramHeight]
+      });
+
+      pdf.addImage(imgData, 'PNG', 0, 0, diagramWidth, diagramHeight);
+      pdf.save('grafcet.pdf');
+    });
   </script>
+
 </body>
 
 </html>
