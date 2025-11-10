@@ -29,8 +29,3 @@ A small interactive Grafcet (SFC) sample implemented as an HTML file. grafcet.ht
 ## License & attribution
 - Respect the GoJS license for use, distribution and attribution. If you adapted code from a specific GoJS sample, keep the original sample header and author attribution as required.
 - For project-specific licensing, add a LICENSE file describing how this repository may be used.
-
-If you want, I can:
-- Generate a more detailed README with example screenshots and code snippets.
-- Add a sample package.json or an offline bundling approach for GoJS.
-- Produce a minimal LICENSE template for this repository.
