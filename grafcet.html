@@ -318,23 +318,25 @@
                       }),
                       new go.TextBlock('Start', {
                         margin: 3,
-                        editable: true
+                        editable: true,
                       })
-                        .bindTwoWay('text', 'step')
                     )
                 ),
               // a connector line between the texts
-              new go.Shape('LineH', { width: 10, height: 1 }),
+              new go.Shape('LineH', { width: 10, height: 1 })
+                .bindTwoWay('visible', 'text', t => t !== ''),
               // the boxed, editable text on the side
               new go.Panel('Auto')
                 .add(
                   new go.Shape({ fill: 'white' }),
                   new go.TextBlock('Action', {
-                    margin: 3,
-                    editable: true
+                  margin: 3,
+                  editable: true
                   })
-                    .bindTwoWay('text')
+                  .bindTwoWay('text')
+                  .bind('visible', 'text', t => t !== '')   // hide if no text
                 )
+
             ));
 
         myDiagram.nodeTemplateMap.add('',
@@ -364,7 +366,9 @@
               new go.Shape('LineH', {
                 width: 10,
                 height: 1
-              }),
+              })
+              .bindTwoWay('visible', 'text', t => t !== '') , // hide if no text
+              // the boxed, editable text on the side
               new go.Panel('Auto')
                 .add(
                   new go.Shape({ fill: 'white' }),
@@ -373,6 +377,7 @@
                     editable: true
                   })
                     .bindTwoWay('text')
+                    .bind('visible', 'text', t => t !== '')   // hide if no text
                 )
             ));
 
