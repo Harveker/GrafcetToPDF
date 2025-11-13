@@ -261,13 +261,13 @@
         // Commands for starting drawing new Links
 
         function startLinkDown(e, obj) {
-          startLink(obj.part.adornedPart, '', 'c');
+          startLink(obj.part.adornedPart, '', 'T :');
         }
         function startLinkAround(e, obj) {
-          startLink(obj.part.adornedPart, 'Skip', 's');
+          startLink(obj.part.adornedPart, 'Skip', 'pulado');
         }
         function startLinkUp(e, obj) {
-          startLink(obj.part.adornedPart, 'Repeat', 'r');
+          startLink(obj.part.adornedPart, 'Repeat', 'repete');
         }
 
         function startLink(node, category, condition) {
@@ -304,7 +304,9 @@
                 name: 'STEPPANEL',
                 portId: '',
                 fromSpot: go.Spot.Bottom,
-                fromLinkable: true
+                fromLinkable: true,
+                toSpot: go.Spot.Top,
+                toLinkable: true
               })
                 .add(
                   new go.Shape({ fill: 'lightgreen' }),
@@ -581,28 +583,18 @@
         <button id="loadModel" onclick="load()">Load</button>
         Diagram Model saved in JSON format:
       </div>
-      <textarea id="mySavedModel" style="width: 100%; height: 300px">{ "class": "go.GraphLinksModel",
+      <textarea id="mySavedModel" style="width: 100%; height: 300px">{ "class": "GraphLinksModel",
   "nodeDataArray": [
-  { "key": 1, "category": "Start", "location": "250 300", "step": "E1", "text": "E1" },
-  { "key": 2, "category": "Start", "location": "350 300", "step": "E2", "text": "E2" },
-
-  { "key": 3, "category": "Exclusive", "location": "300 370", "text": "T1 / T2" },
-
-  { "key": 4, "category": "Start", "location": "250 440", "step": "E3", "text": "E3" },
-  { "key": 5, "category": "Start", "location": "350 440", "step": "E4", "text": "E4" },
-
-  { "key": 6, "category": "Start", "location": "250 510", "step": "Q1.0", "text": "Q1.0 = ON" },
-  { "key": 7, "category": "Start", "location": "350 510", "step": "Q2.0", "text": "Q2.0 = ON" }
- ],
+{"category":"Start","step":"F10","text":"Action","key":-1,"location":"61.00884256638634 -490.63457833628956"},
+{"location":"61 -427","key":-2,"step":"F11","text":"verde"},
+{"location":"61 -374","key":-3,"text":"Amarelo","step":"F12"},
+{"location":"61 -298","key":-4,"text":"Vermelho","step":"F13"}
+],
   "linkDataArray": [
-  { "from": 1, "to": 3, "text": "c" },
-  { "from": 2, "to": 3, "text": "c" },
-
-  { "from": 3, "to": 4, "text": "T1" },
-  { "from": 3, "to": 5, "text": "T2" },
-
-  { "from": 4, "to": 6, "text": "c" },
-  { "from": 5, "to": 7, "text": "c" }
+{"from":-2,"to":-3,"text":"5 segundos"},
+{"from":-3,"to":-4,"text":"2 segundos\n"},
+{"category":"Repeat","text":"repete","from":-4,"to":-2},
+{"category":"","text":"","from":-1,"to":-2}
  ]}
   </textarea>
 
